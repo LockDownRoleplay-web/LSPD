@@ -159,7 +159,7 @@ body {
   background:
     linear-gradient(120deg, rgba(17, 24, 39, 0.95), rgba(15, 23, 42, 0.98)),
     radial-gradient(circle at top, rgba(37, 99, 235, 0.45), transparent 60%);
-  padding: 60px 96px;
+  padding: 40px 48px;
   margin-bottom: 60px;
   box-shadow: 0 14px 36px rgba(15, 23, 42, 0.9);
   position: relative;
@@ -176,8 +176,8 @@ body {
 
 /* Logo */
 .topbar-logo {
-  width: 70px;
-  height: 70px;
+  width: 180px;
+  height: 180px;
   object-fit: contain;
   opacity: 0.95;
   filter: drop-shadow(0 0 4px rgba(255,255,255,0.15));
