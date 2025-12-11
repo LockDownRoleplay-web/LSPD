@@ -42,8 +42,6 @@
         const userRef = window.fsDoc(db, "users", user.uid);
         const snap = await window.fsGetDoc(userRef);
 
-
-
         if (!snap.exists()) {
           errorEl.textContent = "Kein Rollenprofil gefunden.";
           errorEl.style.display = "block";
@@ -64,6 +62,7 @@
 
         showApp();
         showOnlyAdminParts(isAdmin());
+        enforceDefaultView();
         startModules();
 
       } catch (err) {
@@ -109,8 +108,11 @@
     try {
       current = JSON.parse(raw);
       window.LSPD.currentUser = current;
+
       showApp();
       showOnlyAdminParts(isAdmin());
+      enforceNavigationLock();
+      enforceDefaultView();
       startModules();
       return true;
     } catch {
@@ -139,9 +141,41 @@
     if (window.Leit && Leit.init)         Leit.init();
   }
 
-  // -------------------------------------------------------
+  // --------------------------------------------------------------------
+  // ACCESS CONTROL FOR VIEWS
+  // --------------------------------------------------------------------
+  function canAccess(viewId) {
+    const adminOnlyViews = ["view-personal"]; // Personalabteilung
+
+    if (isAdmin()) return true;
+
+    return !adminOnlyViews.includes(viewId);
+  }
+
+  // --------------------------------------------------------------------
+  // ENFORCE DISABLED TABS (VISUAL)
+  // --------------------------------------------------------------------
+  function enforceNavigationLock() {
+    const buttons = document.querySelectorAll(".nav-item");
+
+    buttons.forEach(btn => {
+      const target = btn.dataset.target;
+
+      if (!canAccess(target)) {
+        btn.classList.add("nav-disabled");
+        btn.style.opacity = "0.4";
+        btn.style.pointerEvents = "none";
+      } else {
+        btn.classList.remove("nav-disabled");
+        btn.style.opacity = "1";
+        btn.style.pointerEvents = "auto";
+      }
+    });
+  }
+
+  // --------------------------------------------------------------------
   // NAVIGATION
-  // -------------------------------------------------------
+  // --------------------------------------------------------------------
   function setupNavigation() {
     const buttons = document.querySelectorAll(".nav-item");
     const views   = document.querySelectorAll(".view");
@@ -150,12 +184,29 @@
       btn.addEventListener("click", () => {
         const target = btn.dataset.target;
 
+        if (!canAccess(target)) {
+          LSPD.showToast("Keine Berechtigung für diesen Bereich.", "error");
+          return;
+        }
+
         buttons.forEach(b => b.classList.remove("nav-item-active"));
         btn.classList.add("nav-item-active");
 
         views.forEach(v => v.classList.toggle("view-active", v.id === target));
       });
     });
+  }
+
+  // --------------------------------------------------------------------
+  // DEFAULT VIEW AFTER LOGIN
+  // --------------------------------------------------------------------
+  function enforceDefaultView() {
+    enforceNavigationLock();
+
+    if (!isAdmin()) {
+      // Standard User → immer zur Leitstelle
+      document.querySelector("[data-target='view-leitstelle']").click();
+    }
   }
 
   // -------------------------------------------------------
