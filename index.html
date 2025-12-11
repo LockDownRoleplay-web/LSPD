@@ -50,33 +50,37 @@
   <div class="app" id="app-root">
     <!-- TOP BAR -->
     <header class="topbar">
-      <div class="topbar-left">
-        <img src="img/lspd_logo.png" alt="LSPD Logo" class="topbar-logo">
 
-       <div class="topbar-text">
-       <div class="topbar-title">LSPD · Tactical Operations Center</div>
-       <div class="topbar-subtitle">Leitstelle · Strafkatalog · Personal</div>
-     </div>
+  <!-- LEFT: Logo + Textblock -->
+  <div class="topbar-left">
+    <img src="img/lspd_logo.png" class="topbar-logo" alt="LSPD Logo">
+
+    <div class="topbar-text">
+      <div class="topbar-title">LSPD · TACTICAL OPERATIONS CENTER</div>
+      <div class="topbar-subtitle">Leitstelle · Strafkatalog · Personal</div>
     </div>
+  </div>
 
-      <div class="topbar-right">
-        <div class="topbar-status">
-          <span class="status-dot status-dot-green"></span>
-          Dispatch online
-        </div>
-        <div class="topbar-user">
-          <div class="user-label">
-            Eingeloggt als <span id="current-user-label"></span>
-          </div>
-          <div class="user-actions">
-            <button id="logout-btn" class="btn btn-ghost btn-xs" style="display:none">
-              <span class="btn-icon">⏏</span>
-              Logout
-            </button>
-          </div>
-        </div>
+  <!-- RIGHT: Status + User -->
+  <div class="topbar-right">
+    <div class="topbar-status">
+      <span class="status-dot status-dot-green"></span>
+      DISPATCH ONLINE
+    </div>
+    <div class="topbar-user">
+      <div class="user-label">
+        Eingeloggt als <span id="current-user-label"></span>
       </div>
-    </header>
+      <div class="user-actions">
+        <button id="logout-btn" class="btn btn-ghost btn-xs" style="display:none">
+          ⏏ Logout
+        </button>
+      </div>
+    </div>
+  </div>
+
+</header>
+
 
     <!-- NAVIGATION -->
     <nav class="nav-main">
