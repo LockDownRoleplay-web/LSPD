@@ -15,12 +15,10 @@ function initLeitstelle() {
 
     const STATUS_OPTIONS = [
         "",
-        "10-8 Einsatzbereit",
-        "10-7 Außer Dienst",
-        "10-6 Beschäftigt",
-        "10-23 An Einsatzstelle",
-        "10-76 Auf Anfahrt",
-        "10-19 Zurück zur Wache"
+        "Code 1",
+        "Code 6",
+        "Im PD",
+        "Ausbildung",
     ];
 
     const NUMBER_OPTIONS = Array.from({ length: 24 }, (_, i) => String(i + 1));
