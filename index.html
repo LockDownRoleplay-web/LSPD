@@ -51,9 +51,14 @@
     <!-- TOP BAR -->
     <header class="topbar">
       <div class="topbar-left">
-        <div class="topbar-title">LSPD · Tactical Operations Center</div>
-        <div class="topbar-subtitle">Leitstelle · Strafkatalog · Personal</div>
-      </div>
+        <img src="img/lspd_logo.png" alt="LSPD Logo" class="topbar-logo">
+
+       <div class="topbar-text">
+       <div class="topbar-title">LSPD · Tactical Operations Center</div>
+       <div class="topbar-subtitle">Leitstelle · Strafkatalog · Personal</div>
+     </div>
+    </div>
+
       <div class="topbar-right">
         <div class="topbar-status">
           <span class="status-dot status-dot-green"></span>
@@ -93,91 +98,84 @@
     <main class="main">
       <!-- LEITSTELLENBLATT -->
       <section id="view-leitstelle" class="view view-active">
-        <div class="grid-2">
-          <div class="panel">
-            <div class="panel-header">
-              <div>
-                <div class="panel-title">Leitstellenblatt</div>
-                <div class="panel-subtitle">Einsatzübersicht · Funkdisposition</div>
-              </div>
-              <div class="panel-tag danger-soft">SHIFT ACTIVE</div>
-            </div>
+  <div class="grid-2">
 
-            <div class="panel-body">
-              <div class="form-row">
-                <div class="field">
-                  </select>
-                </div>
-              </div>
+    <!-- PANEL 1 – Leitstellenblatt -->
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Leitstellenblatt</div>
+          <div class="panel-subtitle">Einsatzübersicht · Funkdisposition</div>
+        </div>
+        <div class="panel-tag danger-soft">SHIFT ACTIVE</div>
+      </div>
 
-              <div class="form-row">
-                <div class="field">
-                  <label for="leit-leiter">Supervisor</label>
-                  <input id="leit-leiter" type="text" placeholder="DN + Name" />
-                </div>
-                <div class="field">
-                  <label for="leit-disponent">Leitstelle</label>
-                  <input id="leit-disponent" type="text" placeholder="DN + Name" />
-                </div>
-              </div>
+      <div class="panel-body">
 
-              <div class="field">
-                <label for="leit-notizen">Lage / Hinweise</label>
-                <textarea id="leit-notizen" rows="4" placeholder="Kurzlage, Fahndungen, Sonderlagen …"></textarea>
-              </div>
-            </div>
+        <div class="form-row">
+          <div class="field">
+            <label for="leit-leiter">Supervisor</label>
+            <input id="leit-leiter" type="text" placeholder="DN + Name" />
           </div>
 
-          <div class="panel">
-            <div class="panel-header">
-              <div>
-                <div class="panel-title">Eingeteilte Einheiten</div>
-                <div class="panel-subtitle">Rufnamen · Funk · Status</div>
-              </div>
-              <div class="panel-tag neutral-soft">UNIT GRID</div>
-            </div>
-
-            <div class="panel-body">
-              <div class="table-wrapper">
-                <table class="table">
-                  <thead>
-                    <tr>
-                      <th>ADAM/LINCOLN</th>
-                      <th>DN + Name</th>
-                      <th>Funker</th>
-                      <th>Status</th>
-                      <th>Bemerkung</th>
-                    </tr>
-                  </thead>
-                  <tbody id="leit-tbody">
-                    <!-- per JS -->
-                  </tbody>
-                </table>
-              </div>
-
-              <div class="btn-row-right">
-                <button id="leit-add-row" class="btn btn-ghost btn-sm">
-                  ➕ Zeile
-                </button>
-                <button id="leit-clear-rows" class="btn btn-ghost btn-sm">
-                  🧹 Tabelle leeren
-                </button>
-              </div>
-
-              <div class="btn-row-right mt-8">
-                <button id="leit-copy" class="btn btn-primary">
-                  <span class="btn-icon">📋</span>
-                  Leitstellenblatt kopieren
-                </button>
-                <button id="leit-reset" class="btn btn-ghost">
-                  <span class="btn-icon">↺</span>
-                  Formular zurücksetzen
-                </button>
-              </div>
-            </div>
+          <div class="field">
+            <label for="leit-disponent">Leitstelle</label>
+            <input id="leit-disponent" type="text" placeholder="DN + Name" />
           </div>
         </div>
-      </section>
+
+        <div class="field">
+          <label for="leit-notizen">Lage / Hinweise</label>
+          <textarea id="leit-notizen" rows="4" placeholder="Kurzlage, Fahndungen, Sonderlagen …"></textarea>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- PANEL 2 – Eingeteilte Einheiten -->
+<div class="panel">
+    <div class="panel-header">
+        <div>
+            <div class="panel-title">Eingeteilte Einheiten</div>
+            <div class="panel-subtitle">Rufnamen · Funk · Status</div>
+        </div>
+    </div>
+
+    <div class="panel-body">
+        <div class="table-wrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ADAM/LINCOLN</th>
+                        <th>Nr.</th>
+                        <th>DN + Name</th>
+                        <th>Funker</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+
+                <tbody id="leit-tbody">
+                    <!-- JS füllt automatisch -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="btn-row-right">
+            <button id="leit-add-row" class="btn btn-ghost btn-sm">➕ Zeile</button>
+            <button id="leit-clear-rows" class="btn btn-ghost btn-sm">🧹 Tabelle leeren</button>
+        </div>
+
+        <div class="btn-row-right mt-8">
+            <button id="leit-copy" class="btn btn-primary">
+                📋 Leitstellenblatt kopieren
+            </button>
+            <button id="leit-reset" class="btn btn-ghost">
+                ⟲ Formular zurücksetzen
+            </button>
+        </div>
+    </div>
+</div>
+</section>
 
       <!-- STRAFKATALOG -->
       <section id="view-strafkatalog" class="view">
@@ -211,21 +209,7 @@
               </div>
               <div class="panel-tag danger-soft">LOCK MODE B2</div>
             </div>
-
-            <div class="panel-body">
-              <div class="form-row align-center">
-                <input
-                  id="straf-search"
-                  class="search-input"
-                  type="text"
-                  placeholder='Delikt suchen … z. B. "Mord", "Flucht", "Drogen"'
-                />
-                <button id="straf-search-clear" class="btn btn-ghost btn-xs">
-                  ✕
-                </button>
-              </div>
-
-              <div class="section-label">Kategorien</div>
+            <div class="section-label">Kategorien</div>
               <div id="straf-categories" class="chip-row">
                 <!-- per JS -->
               </div>
@@ -471,19 +455,10 @@
                 </tbody>
               </table>
             </div>
-
-            <p class="hint-text mt-8">
-              Hinweis: Der Inhaber-Account <code>Police_Admin</code> kann nicht gelöscht werden.
-              Alle Daten werden lokal im Browser (LocalStorage) gespeichert.
-            </p>
           </div>
         </div>
       </section>
     </main>
-
-    <footer class="footer">
-      LSPD Tactical PD-System · Standalone (reines Frontend, LocalStorage). Für echte Mehrbenutzer-Locks wäre ein Server nötig.
-    </footer>
   </div>
 
   <!-- TOAST -->
