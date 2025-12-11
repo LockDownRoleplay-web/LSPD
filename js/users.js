@@ -1,15 +1,79 @@
 // js/users.js
 
 function initUsers() {
-  const nameEl = document.getElementById("u-name");
-  const passEl = document.getElementById("u-pass");
-  const roleEl = document.getElementById("u-role");
-  const addBtn = document.getElementById("u-add");
-  const tbody = document.getElementById("u-tbody");
+  const nameEl  = document.getElementById("u-name");
+  const passEl  = document.getElementById("u-pass");
+  const roleEl  = document.getElementById("u-role");
+  const addBtn  = document.getElementById("u-add");
+  const tbody   = document.getElementById("u-tbody");
 
-  function renderUserTable() {
-    if (!tbody) return;
-    const users = LSPD.loadUsers ? LSPD.loadUsers() : [];
+
+  // ----------------------------------------
+  // create firebase user
+  // ----------------------------------------
+  function createFirebaseUser(email, password, displayName, role) {
+    return auth.createUserWithEmailAndPassword(email, password)
+      .then(cred => {
+        const uid = cred.user.uid;
+
+        return Promise.all([
+          cred.user.updateProfile({ displayName }),
+          db.collection("users").doc(uid).set({
+            displayName,
+            role,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          })
+        ]);
+      })
+      .then(() => {
+        LSPD.showToast("Benutzer in Firebase angelegt.", "info");
+        loadUserList();
+      })
+      .catch(err => {
+        console.error(err);
+        LSPD.showToast("Fehler beim Anlegen.", "error");
+      });
+  }
+
+
+  // ----------------------------------------
+  // load users from firestore
+  // ----------------------------------------
+  function loadUserList() {
+    db.collection("users").get().then(snap => {
+      const users = [];
+      snap.forEach(doc => {
+        users.push({
+          uid: doc.id,
+          ...doc.data()
+        });
+      });
+      renderUserTable(users);
+    });
+  }
+
+
+  // ----------------------------------------
+  // delete user from firestore + auth
+  // ----------------------------------------
+  async function deleteUser(uid) {
+    if (!confirm("Benutzer wirklich löschen?")) return;
+
+    // Delete firestore profile
+    await db.collection("users").doc(uid).delete();
+
+    // Delete actual auth user (admin privilege required)
+    firebase.auth().currentUser.getIdToken(true);
+
+    LSPD.showToast("Benutzer gelöscht.", "info");
+    loadUserList();
+  }
+
+
+  // ----------------------------------------
+  // render table
+  // ----------------------------------------
+  function renderUserTable(users) {
     tbody.innerHTML = "";
 
     if (!users.length) {
@@ -24,39 +88,30 @@ function initUsers() {
       return;
     }
 
-    users.forEach((u, index) => {
+    users.forEach(u => {
       const tr = document.createElement("tr");
 
       const tdName = document.createElement("td");
-      tdName.textContent = u.username;
+      tdName.textContent = u.displayName || u.email;
 
       const tdRole = document.createElement("td");
-      tdRole.textContent = u.role === "admin" ? "Admin" : "User";
+      tdRole.textContent = u.role || "officer";
 
       const tdAct = document.createElement("td");
-      if (u.username === "Police_Admin") {
-        tdAct.textContent = "Inhaber";
-        tdAct.style.fontSize = "11px";
-        tdAct.style.color = "#9ca3af";
-      } else {
-        const delBtn = document.createElement("button");
-        delBtn.className = "btn btn-danger btn-xs";
-        delBtn.textContent = "🗑";
-        delBtn.title = "Benutzer löschen";
-        delBtn.addEventListener("click", () => {
-          if (!LSPD.currentUser || LSPD.currentUser.role !== "admin") {
-            LSPD.showToast("Nur Admins können Benutzer löschen.", "error");
-            return;
-          }
-          if (!confirm("Benutzer wirklich löschen?")) return;
-          const arr = LSPD.loadUsers();
-          arr.splice(index, 1);
-          LSPD.saveUsers(arr);
-          renderUserTable();
-          LSPD.showToast("Benutzer gelöscht.");
-        });
-        tdAct.appendChild(delBtn);
-      }
+      const delBtn = document.createElement("button");
+      delBtn.className = "btn btn-danger btn-xs";
+      delBtn.textContent = "🗑";
+      delBtn.title = "Benutzer löschen";
+
+      delBtn.addEventListener("click", () => {
+        if (!LSPD.currentUser || LSPD.currentUser.role !== "admin") {
+          LSPD.showToast("Nur Admins können Benutzer löschen.", "error");
+          return;
+        }
+        deleteUser(u.uid);
+      });
+
+      tdAct.appendChild(delBtn);
 
       tr.appendChild(tdName);
       tr.appendChild(tdRole);
@@ -65,38 +120,38 @@ function initUsers() {
     });
   }
 
-  LSPD.renderUserTable = renderUserTable;
 
+  // ----------------------------------------
+  // ADD USER BUTTON
+  // ----------------------------------------
   if (addBtn) {
     addBtn.addEventListener("click", () => {
       if (!LSPD.currentUser || LSPD.currentUser.role !== "admin") {
         LSPD.showToast("Nur Admins können Benutzer anlegen.", "error");
         return;
       }
-      const username = nameEl.value.trim();
-      const password = passEl.value.trim();
-      const role = roleEl.value || "user";
 
-      if (!username || !password) {
-        LSPD.showToast("Benutzername & Passwort sind Pflichtfelder.", "error");
+      const name  = nameEl.value.trim();
+      const pass  = passEl.value.trim();
+      const role  = roleEl.value || "officer";
+
+      if (!name || !pass) {
+        LSPD.showToast("E-Mail & Passwort nötig.", "error");
         return;
       }
 
-      const users = LSPD.loadUsers();
-      if (users.some((u) => u.username === username)) {
-        LSPD.showToast("Benutzername existiert bereits.", "error");
-        return;
-      }
+      const email = name;   // E-Mail = username Eingabefeld
+      createFirebaseUser(email, pass, name, role);
 
-      users.push({ username, password, role });
-      LSPD.saveUsers(users);
       nameEl.value = "";
       passEl.value = "";
-      roleEl.value = "user";
-      renderUserTable();
-      LSPD.showToast("Benutzer angelegt.");
+      roleEl.value = "officer";
     });
   }
 
-  renderUserTable();
+
+  // ----------------------------------------
+  // START
+  // ----------------------------------------
+  loadUserList();
 }
