@@ -1038,8 +1038,8 @@ body, html, * {
 }
 
 .topbar-logo {
-    width: 60px;
-    height: 60px;
+    width: 240px;
+    height: 240px;
     object-fit: contain;
     opacity: 0.95;
     filter: drop-shadow(0 0 4px rgba(255,255,255,0.15));
