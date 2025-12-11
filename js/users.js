@@ -1,157 +1,154 @@
-// js/users.js
+// js/users.js – Bereinigt, ohne Passwort-Reset, Firebase V9 kompatibel
 
-function initUsers() {
-  const nameEl  = document.getElementById("u-name");
-  const passEl  = document.getElementById("u-pass");
-  const roleEl  = document.getElementById("u-role");
-  const addBtn  = document.getElementById("u-add");
-  const tbody   = document.getElementById("u-tbody");
+import { auth, db } from "./firebase.js";
 
+import {
+    createUserWithEmailAndPassword,
+    updateProfile
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-  // ----------------------------------------
-  // create firebase user
-  // ----------------------------------------
-  function createFirebaseUser(email, password, displayName, role) {
-    return auth.createUserWithEmailAndPassword(email, password)
-      .then(cred => {
-        const uid = cred.user.uid;
-
-        return Promise.all([
-          cred.user.updateProfile({ displayName }),
-          db.collection("users").doc(uid).set({
-            displayName,
-            role,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-          })
-        ]);
-      })
-      .then(() => {
-        LSPD.showToast("Benutzer in Firebase angelegt.", "info");
-        loadUserList();
-      })
-      .catch(err => {
-        console.error(err);
-        LSPD.showToast("Fehler beim Anlegen.", "error");
-      });
-  }
+import {
+    collection,
+    doc,
+    setDoc,
+    deleteDoc,
+    getDocs,
+    serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 
-  // ----------------------------------------
-  // load users from firestore
-  // ----------------------------------------
-  function loadUserList() {
-    db.collection("users").get().then(snap => {
-      const users = [];
-      snap.forEach(doc => {
-        users.push({
-          uid: doc.id,
-          ...doc.data()
-        });
-      });
-      renderUserTable(users);
-    });
-  }
+export function initUsers() {
 
+    const nameEl  = document.getElementById("u-name");   // E-Mail
+    const passEl  = document.getElementById("u-pass");
+    const roleEl  = document.getElementById("u-role");
+    const addBtn  = document.getElementById("u-add");
+    const tbody   = document.getElementById("u-tbody");
 
-  // ----------------------------------------
-  // delete user from firestore + auth
-  // ----------------------------------------
-  async function deleteUser(uid) {
-    if (!confirm("Benutzer wirklich löschen?")) return;
+    // ------------------------------------------------------------
+    // CREATE USER
+    // ------------------------------------------------------------
+    async function createFirebaseUser(email, password, displayName, role) {
+        try {
+            // AUTH USER
+            const cred = await createUserWithEmailAndPassword(auth, email, password);
 
-    // Delete firestore profile
-    await db.collection("users").doc(uid).delete();
+            await updateProfile(cred.user, { displayName });
 
-    // Delete actual auth user (admin privilege required)
-    firebase.auth().currentUser.getIdToken(true);
+            // FIRESTORE USER PROFILE
+            await setDoc(doc(db, "users", cred.user.uid), {
+                displayName,
+                email,
+                role,
+                createdAt: serverTimestamp()
+            });
 
-    LSPD.showToast("Benutzer gelöscht.", "info");
-    loadUserList();
-  }
+            LSPD.showToast("Benutzer erfolgreich erstellt!", "success");
+            loadUserList();
 
-
-  // ----------------------------------------
-  // render table
-  // ----------------------------------------
-  function renderUserTable(users) {
-    tbody.innerHTML = "";
-
-    if (!users.length) {
-      const tr = document.createElement("tr");
-      const td = document.createElement("td");
-      td.colSpan = 3;
-      td.textContent = "Keine Benutzer vorhanden.";
-      td.style.fontSize = "11px";
-      td.style.color = "#6b7280";
-      tr.appendChild(td);
-      tbody.appendChild(tr);
-      return;
+        } catch (err) {
+            console.error(err);
+            LSPD.showToast("Fehler beim Anlegen: " + err.message, "error");
+        }
     }
 
-    users.forEach(u => {
-      const tr = document.createElement("tr");
 
-      const tdName = document.createElement("td");
-      tdName.textContent = u.displayName || u.email;
+    // ------------------------------------------------------------
+    // LOAD USERS
+    // ------------------------------------------------------------
+    async function loadUserList() {
+        tbody.innerHTML = "";
 
-      const tdRole = document.createElement("td");
-      tdRole.textContent = u.role || "officer";
+        const snap = await getDocs(collection(db, "users"));
 
-      const tdAct = document.createElement("td");
-      const delBtn = document.createElement("button");
-      delBtn.className = "btn btn-danger btn-xs";
-      delBtn.textContent = "🗑";
-      delBtn.title = "Benutzer löschen";
-
-      delBtn.addEventListener("click", () => {
-        if (!LSPD.currentUser || LSPD.currentUser.role !== "admin") {
-          LSPD.showToast("Nur Admins können Benutzer löschen.", "error");
-          return;
+        if (snap.empty) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="3" style="font-size:11px;color:#6b7280;">
+                        Keine Benutzer vorhanden.
+                    </td>
+                </tr>`;
+            return;
         }
-        deleteUser(u.uid);
-      });
 
-      tdAct.appendChild(delBtn);
+        snap.forEach(docu => {
+            const u = docu.data();
+            const uid = docu.id;
 
-      tr.appendChild(tdName);
-      tr.appendChild(tdRole);
-      tr.appendChild(tdAct);
-      tbody.appendChild(tr);
-    });
-  }
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${u.displayName}</td>
+                <td>${u.role}</td>
+                <td></td>
+            `;
 
+            // DELETE BUTTON
+            const delBtn = document.createElement("button");
+            delBtn.className = "btn btn-danger btn-xs";
+            delBtn.textContent = "🗑";
+            delBtn.title = "Benutzer löschen";
 
-  // ----------------------------------------
-  // ADD USER BUTTON
-  // ----------------------------------------
-  if (addBtn) {
-    addBtn.addEventListener("click", () => {
-      if (!LSPD.currentUser || LSPD.currentUser.role !== "admin") {
-        LSPD.showToast("Nur Admins können Benutzer anlegen.", "error");
-        return;
-      }
+            delBtn.addEventListener("click", () => {
+                if (!LSPD.currentUser || LSPD.currentUser.role !== "admin") {
+                    return LSPD.showToast("Nur Admins dürfen löschen.", "error");
+                }
+                deleteUser(uid);
+            });
 
-      const name  = nameEl.value.trim();
-      const pass  = passEl.value.trim();
-      const role  = roleEl.value || "officer";
-
-      if (!name || !pass) {
-        LSPD.showToast("E-Mail & Passwort nötig.", "error");
-        return;
-      }
-
-      const email = name;   // E-Mail = username Eingabefeld
-      createFirebaseUser(email, pass, name, role);
-
-      nameEl.value = "";
-      passEl.value = "";
-      roleEl.value = "officer";
-    });
-  }
+            tr.children[2].appendChild(delBtn);
+            tbody.appendChild(tr);
+        });
+    }
 
 
-  // ----------------------------------------
-  // START
-  // ----------------------------------------
-  loadUserList();
+    // ------------------------------------------------------------
+    // DELETE USER (Firestore Profil)
+    // ------------------------------------------------------------
+    async function deleteUser(uid) {
+        if (!confirm("Benutzer wirklich löschen?")) return;
+
+        try {
+            await deleteDoc(doc(db, "users", uid));
+
+            LSPD.showToast("Benutzer gelöscht.", "info");
+            loadUserList();
+
+        } catch (err) {
+            console.error(err);
+            LSPD.showToast("Fehler beim Löschen: " + err.message, "error");
+        }
+    }
+
+
+    // ------------------------------------------------------------
+    // ADD USER BUTTON
+    // ------------------------------------------------------------
+    if (addBtn) {
+        addBtn.addEventListener("click", async () => {
+
+            if (!LSPD.currentUser || LSPD.currentUser.role !== "admin") {
+                return LSPD.showToast("Nur Admins dürfen Benutzer anlegen.", "error");
+            }
+
+            const email = nameEl.value.trim();
+            const password = passEl.value.trim();
+            const role = roleEl.value;
+
+            if (!email || !password) {
+                return LSPD.showToast("E-Mail & Passwort erforderlich!", "error");
+            }
+
+            createFirebaseUser(email, password, email, role);
+
+            nameEl.value = "";
+            passEl.value = "";
+            roleEl.value = "user";
+        });
+    }
+
+
+    // ------------------------------------------------------------
+    // INITIAL LOAD
+    // ------------------------------------------------------------
+    loadUserList();
 }
