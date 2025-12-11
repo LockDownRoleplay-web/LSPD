@@ -1,188 +1,176 @@
-// js/personal.js
+window.Personal = (function () {
 
-function initPersonal() {
-  const STORAGE_KEY = "lspd_personnel_v2";
+    const STORAGE_KEY = "lspd_personal_v1";
 
-  const nameEl = document.getElementById("p-name");
-  const idEl = document.getElementById("p-id");
-  const rankEl = document.getElementById("p-rank");
-  const deptEl = document.getElementById("p-dept");
-  const statusEl = document.getElementById("p-status");
-  const gearEl = document.getElementById("p-gear");
-  const qualsEl = document.getElementById("p-quals");
-  const notesEl = document.getElementById("p-notes");
-  const editIndexEl = document.getElementById("p-edit-index");
+    let people = [];
+    let editIndex = -1;
 
-  const saveBtn = document.getElementById("p-save");
-  const resetBtn = document.getElementById("p-reset");
-  const searchEl = document.getElementById("p-search");
-  const searchClearEl = document.getElementById("p-search-clear");
-  const tbody = document.getElementById("p-tbody");
-
-  let data = [];
-
-  function load() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      data = raw ? JSON.parse(raw) : [];
-    } catch {
-      data = [];
+    function init() {
+        load();
+        renderList();
+        bindEvents();
     }
-  }
 
-  function save() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  }
+    // ---------------------------------------------
+    // STORAGE
+    // ---------------------------------------------
+    function save() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(people));
+    }
 
-  function clearForm() {
-    nameEl.value = "";
-    idEl.value = "";
-    rankEl.value = "";
-    deptEl.value = "";
-    statusEl.value = "Aktiv";
-    gearEl.value = "";
-    qualsEl.value = "";
-    notesEl.value = "";
-    editIndexEl.value = "-1";
-  }
+    function load() {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        people = raw ? JSON.parse(raw) : [];
+    }
 
-  function render(filterText = "") {
-    tbody.innerHTML = "";
-    const q = (filterText || "").toLowerCase();
+    // ---------------------------------------------
+    // EVENTS BINDEN
+    // ---------------------------------------------
+    function bindEvents() {
 
-    let count = 0;
+        const saveBtn = document.getElementById("p-save");
+        const resetBtn = document.getElementById("p-reset");
 
-    data.forEach((p, index) => {
-      const combined = (
-        (p.name || "") +
-        " " +
-        (p.id || "") +
-        " " +
-        (p.rank || "") +
-        " " +
-        (p.dept || "") +
-        " " +
-        (p.status || "")
-      ).toLowerCase();
+        const searchInput = document.getElementById("p-search");
+        const searchClear = document.getElementById("p-search-clear");
 
-      if (q && !combined.includes(q)) return;
+        saveBtn.addEventListener("click", onSave);
+        resetBtn.addEventListener("click", clearForm);
 
-      count++;
-      const tr = document.createElement("tr");
+        searchInput.addEventListener("input", renderList);
+        searchClear.addEventListener("click", () => {
+            searchInput.value = "";
+            renderList();
+        });
+    }
 
-      function td(text) {
-        const tdEl = document.createElement("td");
-        tdEl.textContent = text || "";
-        return tdEl;
-      }
+    // ---------------------------------------------
+    // MITARBEITER SPEICHERN
+    // ---------------------------------------------
+    function onSave() {
 
-      tr.appendChild(td(p.name));
-      tr.appendChild(td(p.id));
-      tr.appendChild(td(p.rank));
-      tr.appendChild(td(p.dept));
-      tr.appendChild(td(p.status));
+        const obj = {
+            name: document.getElementById("p-name").value.trim(),
+            id: document.getElementById("p-id").value.trim(),
+            rank: document.getElementById("p-rank").value,
+            dept: document.getElementById("p-dept").value,
+            status: document.getElementById("p-status").value,
+            gear: document.getElementById("p-gear").value.trim(),
+            quals: document.getElementById("p-quals").value.trim(),
+            notes: document.getElementById("p-notes").value.trim(),
+        };
 
-      const tdActions = document.createElement("td");
-      const editBtn = document.createElement("button");
-      editBtn.className = "btn btn-ghost btn-xs";
-      editBtn.textContent = "✏️";
-      editBtn.title = "Bearbeiten";
-      editBtn.addEventListener("click", () => {
-        nameEl.value = p.name || "";
-        idEl.value = p.id || "";
-        rankEl.value = p.rank || "";
-        deptEl.value = p.dept || "";
-        statusEl.value = p.status || "Aktiv";
-        gearEl.value = p.gear || "";
-        qualsEl.value = p.quals || "";
-        notesEl.value = p.notes || "";
-        editIndexEl.value = String(index);
-      });
+        if (!obj.name) {
+            alert("Bitte einen Namen eingeben!");
+            return;
+        }
 
-      const delBtn = document.createElement("button");
-      delBtn.className = "btn btn-danger btn-xs";
-      delBtn.textContent = "🗑";
-      delBtn.title = "Löschen";
-      delBtn.addEventListener("click", () => {
-        if (!confirm("Mitarbeiter wirklich löschen?")) return;
-        data.splice(index, 1);
+        if (editIndex === -1) {
+            // Neuer Eintrag
+            people.push(obj);
+        } else {
+            // Existierenden Eintrag aktualisieren
+            people[editIndex] = obj;
+        }
+
         save();
-        render(searchEl.value);
-        LSPD.showToast("Mitarbeiter gelöscht.");
-      });
+        renderList();
+        clearForm();
 
-      tdActions.appendChild(editBtn);
-      tdActions.appendChild(delBtn);
-      tr.appendChild(tdActions);
-
-      tbody.appendChild(tr);
-    });
-
-    if (count === 0) {
-      const tr = document.createElement("tr");
-      const tdEmpty = document.createElement("td");
-      tdEmpty.colSpan = 6;
-      tdEmpty.textContent = "Keine Mitarbeiter gefunden.";
-      tdEmpty.style.color = "#6b7280";
-      tdEmpty.style.fontSize = "11px";
-      tr.appendChild(tdEmpty);
-      tbody.appendChild(tr);
-    }
-  }
-
-  saveBtn.addEventListener("click", () => {
-    const name = nameEl.value.trim();
-    const id = idEl.value.trim();
-    const rank = rankEl.value;
-    const dept = deptEl.value;
-    const status = statusEl.value;
-    const gear = gearEl.value.trim();
-    const quals = qualsEl.value.trim();
-    const notes = notesEl.value.trim();
-    const editIndex = parseInt(editIndexEl.value, 10);
-
-    if (!name || !id || !rank || !dept) {
-      LSPD.showToast("Name, Dienstnummer, Rang & Abteilung sind Pflichtfelder.", "error");
-      return;
+        alert("Mitarbeiter gespeichert!");
     }
 
-    const entry = {
-      name,
-      id,
-      rank,
-      dept,
-      status,
-      gear,
-      quals,
-      notes,
-    };
+    // ---------------------------------------------
+    // FORMULAR LEEREN
+    // ---------------------------------------------
+    function clearForm() {
+        editIndex = -1;
 
-    if (!isNaN(editIndex) && editIndex >= 0 && editIndex < data.length) {
-      data[editIndex] = entry;
-      LSPD.showToast("Mitarbeiter aktualisiert.");
-    } else {
-      data.push(entry);
-      LSPD.showToast("Mitarbeiter hinzugefügt.");
+        document.getElementById("p-name").value = "";
+        document.getElementById("p-id").value = "";
+        document.getElementById("p-rank").value = "";
+        document.getElementById("p-dept").value = "";
+        document.getElementById("p-status").value = "Aktiv";
+        document.getElementById("p-gear").value = "";
+        document.getElementById("p-quals").value = "";
+        document.getElementById("p-notes").value = "";
     }
 
-    save();
-    clearForm();
-    render(searchEl.value);
-  });
+    // ---------------------------------------------
+    // LISTE ANZEIGEN
+    // ---------------------------------------------
+    function renderList() {
 
-  resetBtn.addEventListener("click", () => {
-    clearForm();
-  });
+        const tbody = document.getElementById("p-tbody");
+        const search = document.getElementById("p-search").value.toLowerCase();
 
-  searchEl.addEventListener("input", () => {
-    render(searchEl.value);
-  });
+        tbody.innerHTML = "";
 
-  searchClearEl.addEventListener("click", () => {
-    searchEl.value = "";
-    render("");
-  });
+        people
+            .filter(p =>
+                p.name.toLowerCase().includes(search) ||
+                p.id.toLowerCase().includes(search) ||
+                p.rank.toLowerCase().includes(search) ||
+                p.dept.toLowerCase().includes(search) ||
+                p.status.toLowerCase().includes(search)
+            )
+            .forEach((p, index) => {
 
-  load();
-  render("");
-}
+                const tr = document.createElement("tr");
+
+                tr.innerHTML = `
+                    <td>${p.name}</td>
+                    <td>${p.id}</td>
+                    <td>${p.rank}</td>
+                    <td>${p.dept}</td>
+                    <td>${p.status}</td>
+                    <td>
+                        <button class="btn btn-xs btn-primary" data-edit="${index}">✎</button>
+                        <button class="btn btn-xs btn-danger" data-del="${index}">✕</button>
+                    </td>
+                `;
+
+                tbody.appendChild(tr);
+            });
+
+        // Edit / Delete Buttons binden
+        tbody.querySelectorAll("[data-edit]").forEach(btn =>
+            btn.addEventListener("click", (e) => editPerson(e.target.dataset.edit))
+        );
+
+        tbody.querySelectorAll("[data-del]").forEach(btn =>
+            btn.addEventListener("click", (e) => deletePerson(e.target.dataset.del))
+        );
+    }
+
+    // ---------------------------------------------
+    // BEARBEITEN
+    // ---------------------------------------------
+    function editPerson(i) {
+        const p = people[i];
+        editIndex = i;
+
+        document.getElementById("p-name").value = p.name;
+        document.getElementById("p-id").value = p.id;
+        document.getElementById("p-rank").value = p.rank;
+        document.getElementById("p-dept").value = p.dept;
+        document.getElementById("p-status").value = p.status;
+        document.getElementById("p-gear").value = p.gear;
+        document.getElementById("p-quals").value = p.quals;
+        document.getElementById("p-notes").value = p.notes;
+    }
+
+    // ---------------------------------------------
+    // LÖSCHEN
+    // ---------------------------------------------
+    function deletePerson(i) {
+        if (!confirm("Mitarbeiter wirklich löschen?")) return;
+
+        people.splice(i, 1);
+        save();
+        renderList();
+    }
+
+    return { init };
+
+})();
